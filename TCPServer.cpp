@@ -22,7 +22,7 @@ int TCPServer::initServer() {
         cout << "The server has been initialized" << endl;
     }
 
-    const sockaddr tcpAddress = {AF_INET, {*ip}};
+    const sockaddr tcpAddress = {AF_INET, "10.0.0.1"};
 
     int error = bind(serverSocket, &tcpAddress, sizeof(tcpAddress));
 
