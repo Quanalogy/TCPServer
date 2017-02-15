@@ -2,18 +2,30 @@
 // Created by munk on 15-02-17.
 //
 
-#include <sys/socket.h>
+#include <cstring>
 #include "TCPServer.h"
-#include <iostream>
+
 
 using namespace std;
 TCPServer::TCPServer() {
     cout << "Initializing the server..." << endl;
-
+    IPAddr = "127.0.0.1";
+    PortNr = "12000";
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET;          // IPv4
+    hints.ai_socktype = SOCK_STREAM;    // TCP
+//    hints.ai_flags = AI_PASSIVE;
 }
 
 int TCPServer::initServer() {
-    serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+    int status;
+
+    if((status = getaddrinfo(IPAddr, PortNr, &hints, &serverinfo)) != 0) {
+        cout << "Problems assigning the server to the ip" << endl << gai_strerror(status) << endl;
+        return status;
+    }
+
+    serverSocket = socket(serverinfo->ai_family, serverinfo->ai_socktype, serverinfo->ai_protocol);
 
     if(serverSocket <= 0){
         cout << "Failed to initialize the server!" << endl;
@@ -22,9 +34,9 @@ int TCPServer::initServer() {
         cout << "The server has been initialized" << endl;
     }
 
-    const sockaddr tcpAddress = {AF_INET, "10.0.0.1"};
+    //const sockaddr tcpAddress = {AF_INET, IPAddr};
 
-    int error = bind(serverSocket, &tcpAddress, sizeof(tcpAddress));
+    int error = bind(serverSocket, serverinfo->ai_addr, serverinfo->ai_addrlen);
 
     if(error == -1){
         cout << "An error occured when binding the socket on server side" << endl << error << endl;

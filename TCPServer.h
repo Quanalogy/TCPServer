@@ -8,6 +8,11 @@
 #define IPSIZE 14
 #define QUEUESIZE 4
 
+#include <iostream>
+#include <netdb.h>
+#include <sys/socket.h>
+
+
 class TCPServer {
 
 public:
@@ -16,7 +21,11 @@ public:
 
 private:
     int serverSocket;
-    char ip[IPSIZE] = {'1','0','.','0','.','0','.','1'};
+    const char *IPAddr;
+    const char *PortNr;
+    struct addrinfo hints;
+    struct addrinfo *serverinfo;
+
 };
 
 
