@@ -20,6 +20,7 @@ TCPServer::TCPServer() {
 int TCPServer::initServer() {
     int status;
 
+
     if((status = getaddrinfo(IPAddr, PortNr, &hints, &serverinfo)) != 0) {
         cout << "Problems assigning the server to the ip" << endl << gai_strerror(status) << endl;
         return status;
@@ -51,8 +52,15 @@ int TCPServer::initServer() {
     if(error == -1) {
         cout << "Failed to listen on server..." << endl;
     } else {
-        cout << "Successfully setup server..." << "Beam me up Scotty!" << endl;
+        cout << "Successfully setup server..." << "Scotty, Beam me up!" << endl;
     }
+
+    // Accept incoming connection
+    struct sockaddr_storage incoming_addr;
+    socklen_t incoming_size = sizeof(incoming_addr);
+    int incoming_fd = accept(serverSocket, (struct sockaddr *)&incoming_addr, &incoming_size);
+
+
 
     return error;
 }
