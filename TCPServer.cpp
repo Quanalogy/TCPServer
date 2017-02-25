@@ -88,7 +88,7 @@ void TCPServer::acceptConnection() {
     ssize_t recv_size;
     recv_size = recvfrom(incoming_fd, buf, buffersize, 0,
                          &incoming_addr, &incoming_size);
-    cout << "This is what came through: " << buf << " in a size of: " << recv_size
+    cout << "This is what came through: " << buf << " in a size of: " << recv_size << " bytes"
          << endl;
 
 }
