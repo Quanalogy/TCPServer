@@ -5,7 +5,6 @@
 #ifndef CLIENT_SERVER_SOCKET_TCPSERVER_H
 #define CLIENT_SERVER_SOCKET_TCPSERVER_H
 
-#define IPSIZE 14
 #define QUEUESIZE 4
 
 #include <iostream>
@@ -16,8 +15,22 @@
 class TCPServer {
 
 public:
+    /*!
+     * Setup constants
+     */
     TCPServer();
+
+    /*!
+     * Setup the server
+     * @return 0 on success or the standard error (-1)
+     */
     int initServer();
+
+    /*!
+     * Run in while loop, accept connections and handle the request
+     */
+    void acceptConnection();
+
 
 private:
     int serverSocket;

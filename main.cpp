@@ -11,7 +11,7 @@ int main() {
         return -1;
     } else {
         while(1) {
-
+            server.acceptConnection();
         }
     }
 }
