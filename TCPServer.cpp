@@ -3,15 +3,17 @@
 //
 
 #include <cstring>
-#include <zconf.h>
+//#include <zconf.h>
 #include "TCPServer.h"
 
 
 using namespace std;
 TCPServer::TCPServer() {
     cout << "Initializing the server..." << endl;
-    IPAddr = "127.0.0.1";
-    PortNr = "12000";
+    //IPAddr = "127.0.0.1";
+    //PortNr = "12000";
+    IPAddr = "10.0.0.1";
+    PortNr = "9000";
 
     // Allocate space for hints, which holds the connection information
     memset(&hints, 0, sizeof(hints));
