@@ -3,7 +3,10 @@
 //
 
 #include <cstring>
-#include <zconf.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <dirent.h>
+#include <malloc.h>
 #include "TCPServer.h"
 
 
@@ -88,7 +91,76 @@ void TCPServer::acceptConnection() {
     ssize_t recv_size;
     recv_size = recvfrom(incoming_fd, buf, buffersize, 0,
                          &incoming_addr, &incoming_size);
+    buf[recv_size] = '\0';
     cout << "This is what came through: " << buf << " in a size of: " << recv_size
          << endl;
 
+
+    if(recv_size == 3 && strstr(buf, "dir") != NULL){
+        cout << "Requested to list possible files" << endl;
+        char **buffer;
+        getFilesOnServer(&buffer, "./", &incoming_addr, incoming_size, incoming_fd);
+    } else {
+        sendFile(incoming_fd, buf);
+    }
+
+}
+
+void TCPServer::sendFile(int fd, const char *location) {
+    int file = open(location, O_RDONLY);
+    if(file == -1){
+        cout << "Failed to open file" << strerror(errno) << endl;
+    } else {
+        cout << "File exist" << endl;
+    }
+
+    struct stat file_stat;
+    if(fstat(file, &file_stat) < 0){
+        cout << "Failed to assign stats" << endl;
+    } else {
+        cout << "Filesize of file to send: " << file_stat.st_size << endl;
+    }
+}
+
+
+size_t TCPServer::getFilesOnServer(char ***buf, const char *location,
+                                   const struct sockaddr *dest_addr,
+                                   socklen_t dest_len, int dest_fd) {
+    DIR *dp;
+    struct dirent *ep;
+    size_t dirElements = 0;
+    dp = opendir(location);
+
+    if(dp == NULL){
+        cout << "Failed to open file directory" << endl;
+        closedir(dp);
+    } else {
+        *buf = NULL;
+        ep = readdir(dp);
+        while(ep != NULL){
+            ++dirElements;
+            ep = readdir(dp);
+        }
+        rewinddir(dp);
+
+        *buf = (char **) calloc(dirElements, sizeof(char *));
+
+        dirElements = 0;
+        ep = readdir(dp);
+        while(ep != NULL) {
+            (*buf)[dirElements++] = strdup(ep->d_name);
+            ep = readdir(dp);
+        }
+        closedir(dp);
+
+        int bytesSend = 0;
+        for (int i = 0; i < sizeof(*buf); i+=1000) {
+            bytesSend = sendto(dest_fd, buf[i], 1000, 0, dest_addr, dest_len);
+            if(bytesSend == -1){
+                cout << "Error sending list: " << strerror(errno) << endl;
+            }
+        }
+
+        return dirElements;
+    }
 }

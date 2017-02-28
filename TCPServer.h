@@ -31,6 +31,15 @@ public:
      */
     void acceptConnection();
 
+    /*!
+     * Local method for getting files that can be send over the tcp connection
+     * @param buf Where to store the filenames
+     */
+    size_t getFilesOnServer(char ***buf, const char location[], const struct sockaddr *dest_addr,
+                            socklen_t dest_len, int dest_fd);
+
+    void sendFile(int fd, const char location[]);
+
 
 private:
     int serverSocket;
