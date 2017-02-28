@@ -25,13 +25,13 @@ TCPServer::TCPServer() {
 int TCPServer::initServer() {
     int status;
 
-    // setup the ipadress and port number in a readable way for the socket.
+    // setup the ipadress and port number in a readable way for the socket
     if((status = getaddrinfo(IPAddr, PortNr, &hints, &serverinfo)) != 0) {
         cout << "Problems assigning the server to the ip" << endl << gai_strerror(status) << endl;
         return status;
     }
 
-    // Setup the socket that handle incoming requests
+    // Setup the socket that handles incoming requests
     serverSocket = socket(serverinfo->ai_family, serverinfo->ai_socktype, serverinfo->ai_protocol);
 
     if(serverSocket <= 0){
@@ -43,14 +43,14 @@ int TCPServer::initServer() {
 
 
     //SO_REUSEADDR;
-    // Bind the socket, hence tellin it which adresse it belongs
+    // Bind the socket, hence telling it to which address it belongs
     int error = bind(serverSocket, serverinfo->ai_addr, serverinfo->ai_addrlen);
 
     if(error == -1){
-        cout << "An error occured when binding the socket on server side" << endl << error << endl;
+        cout << "An error has occurred while binding the socket on server side" << endl << error << endl;
         return error;
     } else {
-        cout << "Successfully binded the server to the socket" << endl;
+        cout << "Successfully bound the server to the socket" << endl;
     }
 
     // start listening with QUEUESIZE of possible connections
@@ -78,13 +78,13 @@ void TCPServer::acceptConnection() {
     int incoming_fd = accept(serverSocket, &incoming_addr, &incoming_size);
 
     if(incoming_fd <= 0){
-        cout << "Rejected the incomming connection" << endl;
+        cout << "Rejected an incoming connection" << endl;
     } else {
-        cout << "Accepted the incomming connection" << endl;
+        cout << "Accepted an incoming connection" << endl;
     }
 
     // Make a buffer that handles chunks of 1000
-    int buffersize = 1000;
+    size_t buffersize = 1000;
     char buf[buffersize] = {0};
 
     // Receive the message from the client
@@ -92,7 +92,7 @@ void TCPServer::acceptConnection() {
     recv_size = recvfrom(incoming_fd, buf, buffersize, 0,
                          &incoming_addr, &incoming_size);
     buf[recv_size] = '\0';
-    cout << "This is what came through: " << buf << " in a size of: " << recv_size
+    cout << "This is what came through: " << buf << " in a size of: " << recv_size << " bytes"
          << endl;
 
 
