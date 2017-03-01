@@ -153,14 +153,18 @@ size_t TCPServer::getFilesOnServer(char ***buf, const char *location,
         }
         closedir(dp);
 
-        int bytesSend = 0;
+        ssize_t bytesSend = 0;
         for (int i = 0; i < sizeof(*buf); i+=1000) {
-            bytesSend = sendto(dest_fd, buf[i], 1000, 0, dest_addr, dest_len);
-            if(bytesSend == -1){
-                cout << "Error sending list: " << strerror(errno) << endl;
-            }
+//            while(bytesSend > 0) {
+                bytesSend = sendto(dest_fd, *buf[i], 1000, 0, dest_addr, dest_len);
+                if(bytesSend == -1){
+                    cout << "Error sending list: " << strerror(errno) << endl;
+                } else {
+                    cout << "Send " << bytesSend << " bytes" << endl;
+                }
+//            }
         }
 
-        return dirElements;
     }
+    return dirElements;
 }
