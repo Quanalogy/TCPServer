@@ -114,6 +114,8 @@ size_t TCPServer::sendFile(int dest_fd, const struct sockaddr *dest_addr,
     //TODO Handle 404
     if(file == -1){
         cout << "Failed to open file" << strerror(errno) << endl;
+        char error[] = {'4','0','4'};
+        return (size_t) sendto(dest_fd, error, strlen(error), 0, dest_addr, dest_len);
     } else {
         cout << "File exist" << endl;
     }
