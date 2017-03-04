@@ -5,6 +5,7 @@
 #include <cstring>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <sys/sendfile.h>
 #include <dirent.h>
 #include <malloc.h>
 #include "TCPServer.h"
@@ -101,13 +102,16 @@ void TCPServer::acceptConnection() {
         char **buffer;
         getFilesOnServer(&buffer, "./", &incoming_addr, incoming_size, incoming_fd);
     } else {
-        sendFile(incoming_fd, buf);
+        sendFile(incoming_fd, &incoming_addr, incoming_size, buf);
     }
 
 }
 
-void TCPServer::sendFile(int fd, const char *location) {
+size_t TCPServer::sendFile(int dest_fd, const struct sockaddr *dest_addr,
+                           socklen_t dest_len, const char location[]) {
     int file = open(location, O_RDONLY);
+
+    //TODO Handle 404
     if(file == -1){
         cout << "Failed to open file" << strerror(errno) << endl;
     } else {
@@ -119,6 +123,32 @@ void TCPServer::sendFile(int fd, const char *location) {
         cout << "Failed to assign stats" << endl;
     } else {
         cout << "Filesize of file to send: " << file_stat.st_size << endl;
+    }
+
+    // Send the size of file to expect
+    char filesize[256];
+    sprintf(filesize, "%d", file_stat.st_size);
+    ssize_t bytesSend = sendto(dest_fd, filesize, sizeof(filesize), 0, dest_addr, dest_len);
+    if(bytesSend == -1){
+        cout << "Error sending number of bytes, with error: " << strerror(errno) << endl;
+    }
+
+    // Send the file
+    size_t bytesToSend = file_stat.st_size;
+    off_t offset = 0;
+    size_t sendBuf = 1000;
+    while(bytesToSend > 0){
+        if(bytesToSend < 1000){
+            sendBuf =(size_t) bytesToSend;
+        }
+        bytesSend = sendfile(dest_fd, file, &offset, sendBuf);
+        if(bytesSend == -1){
+            cout << "Error while sending the file, with error: " << strerror(errno) << endl;
+            return (size_t) shutdown(dest_fd, 2); // force shutdown the connection
+        }
+
+        bytesToSend -= bytesSend;
+
     }
 }
 

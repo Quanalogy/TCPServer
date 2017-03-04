@@ -38,7 +38,7 @@ public:
     size_t getFilesOnServer(char ***buf, const char location[], const struct sockaddr *dest_addr,
                             socklen_t dest_len, int dest_fd);
 
-    void sendFile(int fd, const char location[]);
+    size_t sendFile(int dest_fd, const struct sockaddr *dest_addr, socklen_t dest_len, const char location[]);
 
 
 private:
