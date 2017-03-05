@@ -111,7 +111,6 @@ size_t TCPServer::sendFile(int dest_fd, const struct sockaddr *dest_addr,
                            socklen_t dest_len, const char location[]) {
     int file = open(location, O_RDONLY);
 
-    //TODO Handle 404
     if(file == -1){
         cout << "Failed to open file" << strerror(errno) << endl;
         char error[] = {'4','0','4'};
@@ -125,6 +124,12 @@ size_t TCPServer::sendFile(int dest_fd, const struct sockaddr *dest_addr,
         cout << "Failed to assign stats" << endl;
     } else {
         cout << "Filesize of file to send: " << file_stat.st_size << endl;
+    }
+
+    if((file_stat.st_mode & S_IFMT) == S_IFDIR){    // Requested a directory, this is not allowed
+        cout << "Requested file is a directory!" << endl;
+        char error[] = {'4', '0', '0'};     // Bad request
+        return (size_t) sendto(dest_fd, error, strlen(error), 0, dest_addr, dest_len);
     }
 
     // Send the size of file to expect
@@ -144,6 +149,8 @@ size_t TCPServer::sendFile(int dest_fd, const struct sockaddr *dest_addr,
             sendBuf =(size_t) bytesToSend;
         }
         bytesSend = sendfile(dest_fd, file, &offset, sendBuf);
+        cout << "offset for file to send is: " << offset << endl;
+        cout << "Bytes send: " << bytesSend << endl;
         if(bytesSend == -1){
             cout << "Error while sending the file, with error: " << strerror(errno) << endl;
             return (size_t) shutdown(dest_fd, 2); // force shutdown the connection
@@ -152,6 +159,7 @@ size_t TCPServer::sendFile(int dest_fd, const struct sockaddr *dest_addr,
         bytesToSend -= bytesSend;
 
     }
+    return bytesToSend;
 }
 
 
