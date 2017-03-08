@@ -14,7 +14,9 @@
 using namespace std;
 TCPServer::TCPServer() {
     cout << "Initializing the server..." << endl;
-    IPAddr = "127.0.0.1";
+//    IPAddr = "127.0.0.1";
+//    IPAddr = "192.168.43.89";
+//    IPAddr = "172.20.10.9";
     PortNr = "12000";
 
     // Allocate space for hints, which holds the connection information
@@ -112,7 +114,7 @@ size_t TCPServer::sendFile(int dest_fd, const struct sockaddr *dest_addr,
     int file = open(location, O_RDONLY);
 
     if(file == -1){
-        cout << "Failed to open file" << strerror(errno) << endl;
+        cout << "Failed to open file in location: " << location << " with error: "<< strerror(errno) << endl;
         char error[] = {'4','0','4'};
         return (size_t) sendto(dest_fd, error, strlen(error), 0, dest_addr, dest_len);
     } else {
@@ -157,8 +159,13 @@ size_t TCPServer::sendFile(int dest_fd, const struct sockaddr *dest_addr,
         }
 
         bytesToSend -= bytesSend;
-
     }
+
+    // Force shutdown, hence sending the 0 byte to terminate the while on client
+    if(shutdown(dest_fd, 2) == -1) {
+        cout << "Failed closing socket, with error: " << strerror(errno) << endl;
+    }
+
     return bytesToSend;
 }
 
@@ -236,7 +243,7 @@ size_t TCPServer::getFilesOnServer(char ***buf, const char *location,
         }
         // Force shutdown, hence sending the 0 byte to terminate the while on client
         if(shutdown(dest_fd, 2) == -1) {
-            cout << "Failed closing socket, with error" << strerror(errno) << endl;
+            cout << "Failed closing socket, with error: " << strerror(errno) << endl;
         }
 
     }
