@@ -14,11 +14,8 @@
 
 using namespace std;
 TCPServer::TCPServer() {
-    cout << "Initializing the server..." << endl;
-    IPAddr = "127.0.0.1";
-//    IPAddr = "192.168.43.89";
-//    IPAddr = "172.20.10.9";
-    PortNr = "12000";
+    IPAddr = "10.0.0.1";
+    PortNr = "9000";
 
     // Allocate space for hints, which holds the connection information
     memset(&hints, 0, sizeof(hints));
@@ -40,11 +37,7 @@ int TCPServer::initServer() {
     if(serverSocket <= 0){
         cout << "Failed to initialize the server!" << endl;
         return serverSocket;
-    } else {
-        cout << "The server has been initialized" << endl;
     }
-
-    //SO_REUSEADDR;
 
     // Bind the socket, hence telling it to which address it belongs
     int error = bind(serverSocket, serverinfo->ai_addr, serverinfo->ai_addrlen);
@@ -53,8 +46,6 @@ int TCPServer::initServer() {
         cout << "An error has occurred while binding the socket on server side: "
              << endl << strerror(errno) << endl;
         return error;
-    } else {
-        cout << "Successfully bound the server to the socket" << endl;
     }
 
     // start listening with QUEUESIZE of possible connections
@@ -84,10 +75,7 @@ void TCPServer::acceptConnection() {
 
         if(incoming_fd <= 0){
             cout << "Rejected an incoming connection" << endl;
-        } else {
-            cout << "Accepted an incoming connection" << endl;
         }
-
         // Make a buffer that handles chunks of 1000
         size_t buffersize = 1000;
         char buf[buffersize] = {0};
@@ -97,9 +85,6 @@ void TCPServer::acceptConnection() {
         recv_size = recvfrom(incoming_fd, buf, buffersize, 0,
                              &incoming_addr, &incoming_size);
         buf[recv_size] = '\0';
-        cout << "This is what came through: " << buf << " in a size of: " << recv_size << " bytes"
-             << endl;
-
 
         if(recv_size == 3 && strstr(buf, "dir") != NULL){
             cout << "Requested to list possible files" << endl;
