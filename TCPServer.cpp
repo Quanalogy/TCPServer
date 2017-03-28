@@ -8,13 +8,14 @@
 #include <sys/sendfile.h>
 #include <dirent.h>
 #include <malloc.h>
+#include <zconf.h>
 #include "TCPServer.h"
 
 
 using namespace std;
 TCPServer::TCPServer() {
     cout << "Initializing the server..." << endl;
-//    IPAddr = "127.0.0.1";
+    IPAddr = "127.0.0.1";
 //    IPAddr = "192.168.43.89";
 //    IPAddr = "172.20.10.9";
     PortNr = "12000";
@@ -27,7 +28,6 @@ TCPServer::TCPServer() {
 
 int TCPServer::initServer() {
     int status;
-
     // setup the ipadress and port number in a readable way for the socket
     if((status = getaddrinfo(IPAddr, PortNr, &hints, &serverinfo)) != 0) {
         cout << "Problems assigning the server to the ip" << endl << gai_strerror(status) << endl;
@@ -45,6 +45,7 @@ int TCPServer::initServer() {
     }
 
     //SO_REUSEADDR;
+
     // Bind the socket, hence telling it to which address it belongs
     int error = bind(serverSocket, serverinfo->ai_addr, serverinfo->ai_addrlen);
 
@@ -71,8 +72,6 @@ int TCPServer::initServer() {
 
 void TCPServer::acceptConnection() {
 
-    // Accept incoming connection
-
     // The socket for incoming connection
     struct sockaddr incoming_addr;
     // Size of it
@@ -80,31 +79,35 @@ void TCPServer::acceptConnection() {
     // Get a filedescriptor for the incoming connection
     int incoming_fd = accept(serverSocket, &incoming_addr, &incoming_size);
 
-    if(incoming_fd <= 0){
-        cout << "Rejected an incoming connection" << endl;
-    } else {
-        cout << "Accepted an incoming connection" << endl;
-    }
+    pid_t child = fork();
+    if(child == 0) { // Child
 
-    // Make a buffer that handles chunks of 1000
-    size_t buffersize = 1000;
-    char buf[buffersize] = {0};
+        if(incoming_fd <= 0){
+            cout << "Rejected an incoming connection" << endl;
+        } else {
+            cout << "Accepted an incoming connection" << endl;
+        }
 
-    // Receive the message from the client
-    ssize_t recv_size;
-    recv_size = recvfrom(incoming_fd, buf, buffersize, 0,
-                         &incoming_addr, &incoming_size);
-    buf[recv_size] = '\0';
-    cout << "This is what came through: " << buf << " in a size of: " << recv_size << " bytes"
-         << endl;
+        // Make a buffer that handles chunks of 1000
+        size_t buffersize = 1000;
+        char buf[buffersize] = {0};
+
+        // Receive the message from the client
+        ssize_t recv_size;
+        recv_size = recvfrom(incoming_fd, buf, buffersize, 0,
+                             &incoming_addr, &incoming_size);
+        buf[recv_size] = '\0';
+        cout << "This is what came through: " << buf << " in a size of: " << recv_size << " bytes"
+             << endl;
 
 
-    if(recv_size == 3 && strstr(buf, "dir") != NULL){
-        cout << "Requested to list possible files" << endl;
-        char **buffer;
-        getFilesOnServer(&buffer, "./", &incoming_addr, incoming_size, incoming_fd);
-    } else {
-        sendFile(incoming_fd, &incoming_addr, incoming_size, buf);
+        if(recv_size == 3 && strstr(buf, "dir") != NULL){
+            cout << "Requested to list possible files" << endl;
+            char **buffer;
+            getFilesOnServer(&buffer, "./", &incoming_addr, incoming_size, incoming_fd);
+        } else {
+            sendFile(incoming_fd, &incoming_addr, incoming_size, buf);
+        }
     }
 
 }
@@ -117,8 +120,6 @@ size_t TCPServer::sendFile(int dest_fd, const struct sockaddr *dest_addr,
         cout << "Failed to open file in location: " << location << " with error: "<< strerror(errno) << endl;
         char error[] = {'4','0','4'};
         return (size_t) sendto(dest_fd, error, strlen(error), 0, dest_addr, dest_len);
-    } else {
-        cout << "File exist" << endl;
     }
 
     struct stat file_stat;
@@ -136,14 +137,14 @@ size_t TCPServer::sendFile(int dest_fd, const struct sockaddr *dest_addr,
 
     // Send the size of file to expect
     char filesize[256];
-    sprintf(filesize, "%d", file_stat.st_size);
+    sprintf(filesize, "%ld", file_stat.st_size);
     ssize_t bytesSend = sendto(dest_fd, filesize, sizeof(filesize), 0, dest_addr, dest_len);
     if(bytesSend == -1){
         cout << "Error sending number of bytes, with error: " << strerror(errno) << endl;
     }
 
     // Send the file
-    size_t bytesToSend = file_stat.st_size;
+    ssize_t bytesToSend = file_stat.st_size;
     off_t offset = 0;
     size_t sendBuf = 1000;
     while(bytesToSend > 0){
@@ -151,8 +152,6 @@ size_t TCPServer::sendFile(int dest_fd, const struct sockaddr *dest_addr,
             sendBuf =(size_t) bytesToSend;
         }
         bytesSend = sendfile(dest_fd, file, &offset, sendBuf);
-        cout << "offset for file to send is: " << offset << endl;
-        cout << "Bytes send: " << bytesSend << endl;
         if(bytesSend == -1){
             cout << "Error while sending the file, with error: " << strerror(errno) << endl;
             return (size_t) shutdown(dest_fd, 2); // force shutdown the connection
@@ -161,12 +160,14 @@ size_t TCPServer::sendFile(int dest_fd, const struct sockaddr *dest_addr,
         bytesToSend -= bytesSend;
     }
 
+    cout << "Bytes to send: " << bytesToSend << endl;
+
     // Force shutdown, hence sending the 0 byte to terminate the while on client
     if(shutdown(dest_fd, 2) == -1) {
         cout << "Failed closing socket, with error: " << strerror(errno) << endl;
     }
 
-    return bytesToSend;
+    return (size_t) bytesToSend;
 }
 
 
