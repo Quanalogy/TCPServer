@@ -8,7 +8,7 @@
 #include <sys/sendfile.h>
 #include <dirent.h>
 #include <malloc.h>
-#include <zconf.h>
+#include <unistd.h>
 #include "TCPServer.h"
 
 
